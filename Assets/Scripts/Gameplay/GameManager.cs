@@ -16,9 +16,6 @@ public class GameManager : MonoBehaviour
 
     private Image overlayImage;
     private Button overlayButton;
-    private float gridCellWidth = 0;
-    private float gridSpacingWidth = 0;
-    private int constraintCount = 0;
 
     private int currentCellIndex = -1;
 
@@ -28,10 +25,6 @@ public class GameManager : MonoBehaviour
         Assert.IsNotNull(puzzleGrid, "You probably forget to set puzzle grid before you start the game.");
         Assert.IsNotNull(inputKeyboard, "You probably forget to set input keyboard before you start the game.");
         Assert.IsNotNull(overlay, "You probably forget to set overlay before you start the game.");
-
-        gridCellWidth = puzzleGrid.GetComponent<GridLayoutGroup>().cellSize.x;
-        gridSpacingWidth = puzzleGrid.GetComponent<GridLayoutGroup>().spacing.x;
-        constraintCount = inputKeyboard.GetComponent<GridLayoutGroup>().constraintCount;
 
         overlayImage = overlay.GetComponent<Image>();
         overlayButton = overlay.GetComponent<Button>();
@@ -74,30 +67,11 @@ public class GameManager : MonoBehaviour
         int i = index / x;
         int j = index % x;
 
-        // gridCellWidth / 4 because the pivot of the grid element is located at the top left corner.
-        // + gridSpacingWidth * constraintCount because of the spacing in between each cell.
-        float offsetDist = gridCellWidth / 4 + gridSpacingWidth * constraintCount;
-
-        inputKeyboard.transform.position = button.transform.position;
-
         // if the element is located at the edge of the grid, offset it by 1 cell.
-        if (i == 0)
-        {
-            inputKeyboard.transform.position -= new Vector3(0, offsetDist);
-        }
-        else if (i == x - 1)
-        {
-            inputKeyboard.transform.position += new Vector3(0, offsetDist);
-        }
+        i += (i == 0) ? 1 : ((i == x - 1) ? -1 : 0);
+        j += (j == 0) ? 1 : ((j == x - 1) ? -1 : 0);
 
-        if (j == 0)
-        {
-            inputKeyboard.transform.position += new Vector3(offsetDist, 0);
-        }
-        else if (j == x - 1)
-        {
-            inputKeyboard.transform.position -= new Vector3(offsetDist, 0);
-        }
+        inputKeyboard.transform.position = puzzleGrid.transform.GetChild(i * x + j).position;
 
         overlayButton.interactable = true;
         overlayImage.raycastTarget = true;
@@ -114,7 +88,7 @@ public class GameManager : MonoBehaviour
 
         if (value != 0)
         {
-            puzzle.Set(currentCellIndex, value);
+            puzzle[currentCellIndex] = value;
             puzzleGrid.transform.GetChild(currentCellIndex).GetChild(0).GetComponent<TextMeshProUGUI>().text = value.ToString();
         }
 

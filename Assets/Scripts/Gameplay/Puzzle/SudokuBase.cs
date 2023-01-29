@@ -35,6 +35,10 @@ namespace Sudoku.Gameplay.Puzzle
             {
                 return Grid[i, j];
             }
+            set 
+            { 
+                Grid[i, j] = value;
+            }
         }
 
         public int this[int i]
@@ -43,16 +47,10 @@ namespace Sudoku.Gameplay.Puzzle
             {
                 return Grid[i / GetLength(0), i % GetLength(0)];
             }
-        }
-
-        public virtual void Set(int i, int j, int value)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Set(int i, int value)
-        {
-            Set(i / GetLength(0), i % GetLength(0), value);
+            set
+            {
+                this[i / GetLength(0), i % GetLength(0)] = value;
+            }
         }
 
         public virtual void Generate(int emptyCount = 0)

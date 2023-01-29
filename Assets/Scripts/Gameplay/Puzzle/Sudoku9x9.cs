@@ -29,11 +29,6 @@ namespace Sudoku.Gameplay.Puzzle
             }
         }
 
-        public override void Set(int i, int j, int num)
-        {
-            Grid[i, j] = num;
-        }
-
         // Start is called before the first frame update
         public override void Generate(int emptyCount = 0)
         {
@@ -57,20 +52,17 @@ namespace Sudoku.Gameplay.Puzzle
 
             if (sum == 405) // 405 as the sum of a complete sudoku
             {
-                // Check each cell.
-                for (int i = 0; i < 9; i++)
+                // Check each removed cell.
+                foreach (var idx in removedIndex)
                 {
-                    for (int j = 0; j < 9; j++)
+                    int temp = this[idx];
+                    this[idx] = 0;
+                    if (!CheckIsNumberAvailable(idx / GetLength(0), idx % GetLength(0), temp))
                     {
-                        int temp = Grid[i, j];
-                        Grid[i, j] = 0;
-                        if (!CheckIsNumberAvailable(i, j, temp))
-                        {
-                            Debug.Log("Not unique!");
-                            return false;
-                        }
-                        Grid[i, j] = temp;
+                        Debug.Log("Not unique!");
+                        return false;
                     }
+                    this[idx] = temp;
                 }
                 return true;
             }
