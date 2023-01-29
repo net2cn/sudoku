@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Runtime.Serialization.Json;
 using System.Text;
 using UnityEngine;
 
@@ -10,16 +12,14 @@ namespace Sudoku.Gameplay.Puzzle
     // https://www.sudokuoftheday.com/creation
     public sealed class Sudoku9x9 : SudokuBase
     {
-        private int[] removedIndex;
-
         public Sudoku9x9()
         {
-            Grid = new int[9, 9];
+            Grid = new int[81];
         }
 
-        public Sudoku9x9(int[,] initialGrid)
+        public Sudoku9x9(int[] initialGrid)
         {
-            if (initialGrid.Rank == 2 && initialGrid.GetLength(0) == 9 && initialGrid.GetLength(1) == 9)
+            if (initialGrid.Length == 81)
             {
                 Grid = initialGrid;
             }
@@ -32,13 +32,10 @@ namespace Sudoku.Gameplay.Puzzle
         // Start is called before the first frame update
         public override void Generate(int emptyCount = 0)
         {
-            if (emptyCount > 81)
-            {
-                Debug.LogError($"You can't generate a puzzle with empty count of {emptyCount}. Maximum allowed is 81");
-            }
-            removedIndex = new int[emptyCount];
+            base.Generate(emptyCount);
             FillDiagnonalBox();
             DFS(0, 3);
+            solution = (int[])Grid.Clone();
             RemoveElements(emptyCount);
         }
 
@@ -53,11 +50,11 @@ namespace Sudoku.Gameplay.Puzzle
             if (sum == 405) // 405 as the sum of a complete sudoku
             {
                 // Check each removed cell.
-                foreach (var idx in removedIndex)
+                foreach (var idx in removedCellIndex)
                 {
                     int temp = this[idx];
                     this[idx] = 0;
-                    if (!CheckIsNumberAvailable(idx / GetLength(0), idx % GetLength(0), temp))
+                    if (!CheckIsNumberAvailable(idx / sideLength, idx % sideLength, temp))
                     {
                         Debug.Log("Not unique!");
                         return false;
@@ -68,6 +65,16 @@ namespace Sudoku.Gameplay.Puzzle
             }
 
             return false;
+        }
+
+        public override string Serialize()
+        {
+            var serializer = new DataContractJsonSerializer(typeof(Sudoku9x9));
+            using (MemoryStream ms = new MemoryStream())
+            {
+                serializer.WriteObject(ms, this);
+                return Encoding.Default.GetString(ms.ToArray());
+            }
         }
 
         private void FillDiagnonalBox()
@@ -82,7 +89,7 @@ namespace Sudoku.Gameplay.Puzzle
                 {
                     for (int k = 0; k < 3; k++)
                     {
-                        Grid[j + i * 3, k + i * 3] = nums[j * 3 + k];
+                        this[j + i * 3, k + i * 3] = nums[j * 3 + k];
                     }
                 }
             }
@@ -105,7 +112,7 @@ namespace Sudoku.Gameplay.Puzzle
             }
 
             // Skip non-zero tiles.
-            if (Grid[i, j] != 0)
+            if (this[i, j] != 0)
             {
                 return DFS(i, j + 1);
             }
@@ -114,12 +121,12 @@ namespace Sudoku.Gameplay.Puzzle
             {
                 if (CheckIsNumberAvailable(i, j, num))
                 {
-                    Grid[i, j] = num;
+                    this[i, j] = num;
                     if (DFS(i, j + 1))
                     {
                         return true;
                     }
-                    Grid[i, j] = 0;
+                    this[i, j] = 0;
                 }
             }
             return false;
@@ -130,20 +137,47 @@ namespace Sudoku.Gameplay.Puzzle
             for (int k = 0; k < 9; k++)
             {
                 // Horizontal
-                if (Grid[i, k] == num)
+                if (this[i, k] == num)
                 {
                     return false;
                 }
                 // Vertical
-                if (Grid[k, j] == num)
+                if (this[k, j] == num)
                 {
                     return false;
                 }
                 // Box
-                if (Grid[i - i % 3 + k / 3, j - j % 3 + k % 3] == num)
+                if (this[i - i % 3 + k / 3, j - j % 3 + k % 3] == num)
                 {
                     return false;
                 }
+            }
+            return true;
+        }
+
+        private bool TryRemovePair(int i, int j)
+        {
+            int availableCount = 0;
+            int tempI = this[i];
+            this[i] = 0;
+            int tempJ = this[j];
+            this[j] = 0;
+            for (int num = 0; num < 9; num++)
+            {
+                if (CheckIsNumberAvailable(i / 9, i % 9, num))
+                {
+                    availableCount++;
+                }
+                if (CheckIsNumberAvailable(j / 9, j % 9, num))
+                {
+                    availableCount++;
+                }
+            }
+            if (availableCount > 2)
+            {
+                this[i] = tempI;
+                this[j] = tempJ;
+                return false;
             }
             return true;
         }
@@ -154,21 +188,37 @@ namespace Sudoku.Gameplay.Puzzle
             int[] seq = Enumerable.Range(0, 39).ToArray();
             Shuffle(ref seq);
             // TODO: Test solvability before removal.
-            for (int i = 0; i < count / 2; i++)
+            int removedPair = 0;
+            int idx = 0;
+            while (removedPair < count / 2 && idx<81)
             {
-                Grid[seq[i] / 9, seq[i] % 9] = 0;
-                // Remove its rotational counterpart as well.
-                Grid[8 - seq[i] / 9, 8 - seq[i] % 9] = 0;
+                if (TryRemovePair(seq[idx], 80 - seq[idx]))
+                {
+                    removedCellIndex[removedPair * 2] = seq[idx];
+                    removedCellIndex[removedPair * 2 + 1] = 80 - seq[idx];    // Also remove its rotational counterpart as suggested.
+                    removedPair++;
+                }
+                else
+                {
+                    Debug.Log($"Removing cell at index {idx} and {80-idx} will cause the sudoku has more than 1 solution, skipping...");
+                }
+                idx++;
+            }
 
-                removedIndex[i * 2] = seq[i];
-                removedIndex[i * 2 + 1] = 80 - seq[i];
+            // Failed all attempts at removing elements, go around.
+            if (idx == 81)
+            {
+                for(int i = 0; i < Length; i++) {
+                    Grid[i] = solution[i];
+                }
+                RemoveElements(count);
             }
 
             // For convinience remove the center element.
             if (count % 2 == 1)
             {
-                Grid[4, 4] = 0;
-                removedIndex[^1] = 40;
+                this[4, 4] = 0;
+                removedCellIndex[^1] = 40;
             }
         }
     }
