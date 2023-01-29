@@ -12,7 +12,8 @@ public class GameManager : MonoBehaviour
     public GameObject inputKeyboard;
     public GameObject overlay;
 
-    public int removeCellCount = 31;
+    [Tooltip("Setting this number higher than 41 will increase the probability of generating sudoku with more than 1 solution.")]
+    public int removeCellCount = 31;    // I've read somewhere the upper bound of the empty cell count is 64. (that is given 17 clues)
 
     private Sudoku9x9 puzzle = new Sudoku9x9();
 

@@ -7601,6 +7601,7 @@ MonoBehaviour:
   puzzleGrid: {fileID: 494200868}
   inputKeyboard: {fileID: 2123243215}
   overlay: {fileID: 1691241076}
+  removeCellCount: 31
 --- !u!1 &752167740
 GameObject:
   m_ObjectHideFlags: 0

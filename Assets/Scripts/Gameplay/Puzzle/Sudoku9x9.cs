@@ -12,6 +12,7 @@ namespace Sudoku.Gameplay.Puzzle
     // https://www.sudokuoftheday.com/creation
     public sealed class Sudoku9x9 : SudokuBase
     {
+        private const int REMOVAL_ATTEMPS = 10;
         public Sudoku9x9()
         {
             Grid = new int[81];
@@ -155,66 +156,82 @@ namespace Sudoku.Gameplay.Puzzle
             return true;
         }
 
-        private bool TryRemovePair(int i, int j)
+        private bool TryRemovePair(int i, int j, bool force = false)
         {
             int availableCount = 0;
             int tempI = this[i];
             this[i] = 0;
             int tempJ = this[j];
             this[j] = 0;
-            for (int num = 0; num < 9; num++)
+            if (!force)
             {
-                if (CheckIsNumberAvailable(i / 9, i % 9, num))
+                for (int num = 0; num < 9; num++)
                 {
-                    availableCount++;
+                    if (CheckIsNumberAvailable(i / 9, i % 9, num))
+                    {
+                        availableCount++;
+                    }
+                    if (CheckIsNumberAvailable(j / 9, j % 9, num))
+                    {
+                        availableCount++;
+                    }
                 }
-                if (CheckIsNumberAvailable(j / 9, j % 9, num))
+                if (availableCount > 2)
                 {
-                    availableCount++;
+                    this[i] = tempI;
+                    this[j] = tempJ;
+                    return false;
                 }
             }
-            if (availableCount > 2)
-            {
-                this[i] = tempI;
-                this[j] = tempJ;
-                return false;
-            }
+
             return true;
         }
 
-        private void RemoveElements(int count)
+        private void RemoveElements(int count, int attemp = 0)
         {
-            // Make sure remove exactly the count
-            int[] seq = Enumerable.Range(0, 39).ToArray();
+            // Remove by pair
+            int[] seq = Enumerable.Range(0, 40).ToArray();
             Shuffle(ref seq);
             // TODO: Test solvability before removal.
             int removedPair = 0;
-            int idx = 0;
-            while (removedPair < count / 2 && idx<81)
+            int seqIdx = 0;
+            while (removedPair < count / 2 && seqIdx < seq.Length)
             {
-                if (TryRemovePair(seq[idx], 80 - seq[idx]))
+                if (TryRemovePair(seq[seqIdx], 80 - seq[seqIdx], attemp == REMOVAL_ATTEMPS - 1))
                 {
-                    removedCellIndex[removedPair * 2] = seq[idx];
-                    removedCellIndex[removedPair * 2 + 1] = 80 - seq[idx];    // Also remove its rotational counterpart as suggested.
+                    removedCellIndex[removedPair * 2] = seq[seqIdx];
+                    removedCellIndex[removedPair * 2 + 1] = 80 - seq[seqIdx];    // Also remove its rotational counterpart as suggested.
                     removedPair++;
                 }
                 else
                 {
-                    Debug.Log($"Removing cell at index {idx} and {80-idx} will cause the sudoku has more than 1 solution, skipping...");
+                    Debug.Log($"Removing cell at index {seq[seqIdx]} and {80 - seq[seqIdx]} will cause the sudoku has more than 1 solution, skipping...");
                 }
-                idx++;
+                seqIdx++;
             }
 
             // Failed all attempts at removing elements, go around.
-            if (idx == 81)
+            if (seqIdx == seq.Length)
             {
-                for(int i = 0; i < Length; i++) {
-                    Grid[i] = solution[i];
+                if (attemp < REMOVAL_ATTEMPS - 1)
+                {
+                    Debug.LogWarning($"Unable to generate a sudoku with unique solution. Retrying attemp #{attemp + 2} out of maximum {REMOVAL_ATTEMPS}");
+
+                    for (int i = 0; i < Length; i++)
+                    {
+                        Grid[i] = solution[i];
+                    }
+                    RemoveElements(count, attemp + 1);
+                    return;
                 }
-                RemoveElements(count);
             }
 
-            // For convinience remove the center element.
+            if (attemp==REMOVAL_ATTEMPS - 1)
+            {
+                Debug.LogError($"Unable to generate a sudoku with unique solution at maximum {REMOVAL_ATTEMPS} attempts. A sudoku with probably more than 1 solution is generated.");
+            }
+
+            // For convinience remove the center element if odd count is present.
             if (count % 2 == 1)
             {
                 this[4, 4] = 0;
