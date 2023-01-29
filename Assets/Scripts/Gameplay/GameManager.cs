@@ -10,8 +10,12 @@ public class GameManager : MonoBehaviour
 {
     public GameObject puzzleGrid;
     public GameObject inputKeyboard;
+    public GameObject overlay;
 
     private Sudoku9x9 puzzle = new Sudoku9x9();
+
+    private Image overlayImage;
+    private Button overlayButton;
     private float gridCellWidth = 0;
     private float gridSpacingWidth = 0;
     private int constraintCount = 0;
@@ -23,10 +27,14 @@ public class GameManager : MonoBehaviour
     {
         Assert.IsNotNull(puzzleGrid, "You probably forget to set puzzle grid before you start the game.");
         Assert.IsNotNull(inputKeyboard, "You probably forget to set input keyboard before you start the game.");
+        Assert.IsNotNull(overlay, "You probably forget to set overlay before you start the game.");
 
         gridCellWidth = puzzleGrid.GetComponent<GridLayoutGroup>().cellSize.x;
         gridSpacingWidth = puzzleGrid.GetComponent<GridLayoutGroup>().spacing.x;
         constraintCount = inputKeyboard.GetComponent<GridLayoutGroup>().constraintCount;
+
+        overlayImage = overlay.GetComponent<Image>();
+        overlayButton = overlay.GetComponent<Button>();
 
         puzzle.Generate(31);
         Debug.Log(puzzle.ToString());
@@ -56,6 +64,8 @@ public class GameManager : MonoBehaviour
             int value = i + 1;
             inputKeyboard.transform.GetChild(i).GetComponent<Button>().onClick.AddListener(delegate { SetCell(value); });
         }
+
+        overlayButton.onClick.AddListener(delegate { SetCell(0); });
     }
 
     void OpenKeyboard(GameObject button, int index)
@@ -89,6 +99,8 @@ public class GameManager : MonoBehaviour
             inputKeyboard.transform.position -= new Vector3(offsetDist, 0);
         }
 
+        overlayButton.interactable = true;
+        overlayImage.raycastTarget = true;
         inputKeyboard.SetActive(true);
         currentCellIndex = index;
     }
@@ -100,9 +112,15 @@ public class GameManager : MonoBehaviour
             throw new System.InvalidOperationException("You should set currentCellIndex before calling SetCell()");
         }
 
-        puzzle.Set(currentCellIndex, value);
-        puzzleGrid.transform.GetChild(currentCellIndex).GetChild(0).GetComponent<TextMeshProUGUI>().text = value.ToString();
+        if (value != 0)
+        {
+            puzzle.Set(currentCellIndex, value);
+            puzzleGrid.transform.GetChild(currentCellIndex).GetChild(0).GetComponent<TextMeshProUGUI>().text = value.ToString();
+        }
+
         currentCellIndex = -1;
         inputKeyboard.SetActive(false);
+        overlayImage.raycastTarget = false;
+        overlayButton.interactable = false;
     }
 }
