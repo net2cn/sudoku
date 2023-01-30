@@ -16,7 +16,6 @@ namespace Sudoku.Gameplay.Puzzle
     public abstract class SudokuBase
     {
         [DataMember] public int sideLength = 0;
-        [DataMember] public int removedCellCount = 0;
         [DataMember] public int[] removedCellIndex;
 
         [DataMember] protected int[] solution;
@@ -71,7 +70,6 @@ namespace Sudoku.Gameplay.Puzzle
             {
                 Debug.LogError($"You can't generate a puzzle with empty count of {emptyCount}. Maximum allowed is {Length}.");
             }
-            removedCellCount = emptyCount;
             removedCellIndex = new int[emptyCount];
         }
 

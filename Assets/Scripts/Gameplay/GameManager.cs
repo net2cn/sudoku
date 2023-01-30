@@ -5,6 +5,7 @@ using Sudoku.Gameplay.Puzzle;
 using UnityEngine.UI;
 using UnityEngine.Assertions;
 using TMPro;
+using DG.Tweening;
 
 public class GameManager : MonoBehaviour
 {
@@ -14,6 +15,10 @@ public class GameManager : MonoBehaviour
 
     [Tooltip("Setting this number higher than 41 will increase the probability of generating sudoku with more than 1 solution.")]
     public int removeCellCount = 31;    // I've read somewhere the upper bound of the empty cell count is 64. (that is given 17 clues)
+
+    public float solvedFlipAnimationInterval = 0.08f;
+
+    public Sprite[] solvedSprite;
 
     private Sudoku9x9 puzzle = new Sudoku9x9();
 
@@ -29,15 +34,14 @@ public class GameManager : MonoBehaviour
         Assert.IsNotNull(puzzleGrid, "You probably forget to set puzzle grid before you start the game.");
         Assert.IsNotNull(inputKeyboard, "You probably forget to set input keyboard before you start the game.");
         Assert.IsNotNull(overlay, "You probably forget to set overlay before you start the game.");
+        Assert.AreEqual(puzzleGrid.transform.childCount, puzzle.Length, $"puzzleGrid should have exactly {puzzle.Length} child.");
+        Assert.AreEqual(inputKeyboard.transform.childCount, puzzle.sideLength, $"inputKeyboard should have exactly {puzzle.sideLength} child.");
+        Assert.AreEqual(puzzleGrid.transform.childCount, solvedSprite.Length, "solvedSprite should have exact same elements count as puzzleGrid child count.");
 
         overlayImage = overlay.GetComponent<Image>();
         overlayButton = overlay.GetComponent<Button>();
 
         puzzle.Generate(removeCellCount);
-        Debug.Log(puzzle.ToString());
-
-        Assert.AreEqual(puzzleGrid.transform.childCount, puzzle.Length);
-        Assert.AreEqual(inputKeyboard.transform.childCount, puzzle.sideLength);
 
         for (int i = 0; i < puzzle.Length; i++)
         {
@@ -105,14 +109,73 @@ public class GameManager : MonoBehaviour
             puzzleGrid.transform.GetChild(currentCellIndex).GetChild(0).GetComponent<TextMeshProUGUI>().text = value.ToString();
         }
 
-        if (filledCount == puzzle.removedCellCount && puzzle.Validate())
+        // Validate puzzle once all empty cells are filled.
+        if (filledCount == puzzle.removedCellIndex.Length && puzzle.Validate())
         {
-            Debug.Log("Sudoku solved.");
-        } 
+            SolvedAnimation();
+        }
 
         currentCellIndex = -1;
         inputKeyboard.SetActive(false);
         overlayImage.raycastTarget = false;
         overlayButton.interactable = false;
+    }
+
+    void SolvedAnimation()
+    {
+        var flipOutSequence = DOTween.Sequence();
+        for (int i = 0; i < 9; i++)
+        {
+            for (int j = 0; j < i + 1; j++)
+            {
+                int idx = i + j * 8;
+                var go = puzzleGrid.transform.GetChild(idx);
+                var btn = go.GetComponent<Button>();
+                btn.transition = Selectable.Transition.None;
+                btn.interactable = false;
+                flipOutSequence.Insert(solvedFlipAnimationInterval * i, go.transform.DORotate(new Vector3(0, 90, 0), solvedFlipAnimationInterval));
+
+                if (i < 8)
+                {
+                    idx = 80 - idx;
+                    go = puzzleGrid.transform.GetChild(idx);
+                    btn = go.GetComponent<Button>();
+                    btn.transition = Selectable.Transition.None;
+                    btn.interactable = false;
+                    flipOutSequence.Insert(solvedFlipAnimationInterval * (16 - i), go.transform.DORotate(new Vector3(0, 90, 0), solvedFlipAnimationInterval));
+                }
+            }
+        }
+
+
+
+        flipOutSequence.OnComplete(() =>
+        {
+            for (int i = 0; i < puzzleGrid.transform.childCount; i++)
+            {
+                var go = puzzleGrid.transform.GetChild(i);
+                go.GetComponent<Image>().sprite = solvedSprite[i];
+                go.GetComponentInChildren<TextMeshProUGUI>().text = "";
+            }
+            var flipInSequence = DOTween.Sequence();
+            for (int i = 0; i < 9; i++)
+            {
+                for (int j = 0; j < i + 1; j++)
+                {
+                    int idx = i + j * 8;
+                    var go = puzzleGrid.transform.GetChild(idx);
+
+                    flipInSequence.Insert(solvedFlipAnimationInterval * i, go.transform.DORotate(new Vector3(0, 0, 0), solvedFlipAnimationInterval));
+
+                    if (i < 8)
+                    {
+                        idx = 80 - idx;
+                        go = puzzleGrid.transform.GetChild(idx);
+                        flipInSequence.Insert(solvedFlipAnimationInterval * (16 - i), go.transform.DORotate(new Vector3(0, 0, 0), solvedFlipAnimationInterval));
+                    }
+                }
+            }
+            flipInSequence.Play();
+        }).Play();
     }
 }
