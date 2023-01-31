@@ -60,6 +60,7 @@ namespace Sudoku.Gameplay
                 if (PlayerPrefs.HasKey(Globals.DIFFICULTY_KEY))
                 {
                     removeCellCount = PlayerPrefs.GetInt(Globals.DIFFICULTY_KEY);
+                    PlayerPrefs.DeleteKey(Globals.DIFFICULTY_KEY);
                 }
                 else
                 {
@@ -195,10 +196,6 @@ namespace Sudoku.Gameplay
         void PuzzleSolved()
         {
             _puzzle.solved = true;
-            if (File.Exists(Globals.PROGRESS_DATA_FILE_PATH))
-            {
-                File.Delete(Globals.PROGRESS_DATA_FILE_PATH);
-            }
 
             // Animate grid, start flipping animation from top left to bottom right
             var flipOutSequence = DOTween.Sequence();
@@ -228,8 +225,6 @@ namespace Sudoku.Gameplay
                     }
                 }
             }
-
-
 
             flipOutSequence.OnComplete(() =>
             {
@@ -270,17 +265,22 @@ namespace Sudoku.Gameplay
 
         void SaveProgress()
         {
-            Debug.Log($"Saving game progress to {Globals.PROGRESS_DATA_FILE_PATH}...");
-            var json = _puzzle.Serialize();
-            File.WriteAllText(Globals.PROGRESS_DATA_FILE_PATH, json);
+            if (!_puzzle.solved)
+            {
+                Debug.Log($"Saving game progress to {Globals.PROGRESS_DATA_FILE_PATH}...");
+                var json = _puzzle.Serialize();
+                File.WriteAllText(Globals.PROGRESS_DATA_FILE_PATH, json);
+            }
+            else
+            {
+                File.Delete(Globals.PROGRESS_DATA_FILE_PATH);
+                _puzzle = null;
+            }
         }
 
         void Close()
         {
-            if (!_puzzle.solved)
-            {
-                SaveProgress();
-            }
+            SaveProgress();
 
             StartCoroutine(Globals.LoadSceneAsync(Globals.ENTRANCE_SCENE_NAME));
         }
