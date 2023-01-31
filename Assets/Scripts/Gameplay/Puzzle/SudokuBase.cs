@@ -12,6 +12,7 @@ namespace Sudoku.Gameplay.Puzzle
     {
         [DataMember] public int sideLength = 0;
         [DataMember] public int[] removedCellIndex;
+        [DataMember] public bool solved = false;
 
         [DataMember] protected int[] _solution;
         [DataMember] private int[] _grid;

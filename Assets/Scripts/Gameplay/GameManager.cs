@@ -8,7 +8,6 @@ using DG.Tweening;
 using TMPro;
 
 using Sudoku.Gameplay.Puzzle;
-using UnityEngine.Playables;
 
 namespace Sudoku.Gameplay
 {
@@ -20,7 +19,7 @@ namespace Sudoku.Gameplay
         public Button returnButton;
 
         [Tooltip("Setting this number higher than 41 will increase the probability of generating sudoku with more than 1 solution.")]
-        public int removeCellCount = 31;    // I've read somewhere the upper bound of the empty cell count is 64. (that is given 17 clues)
+        public int removeCellCount = 21;    // I've read somewhere the upper bound of the empty cell count is 64. (that is given 17 clues)
 
         public float solvedFlipAnimationInterval = 0.08f;
 
@@ -34,9 +33,6 @@ namespace Sudoku.Gameplay
         private int _currentCellIndex = -1;
         private int _filledCount = 0;
 
-        private static string _dataFilePath = "progress.json";
-        private static string _difficultyKey = "difficulty";
-
         void Awake()
         {
             Assert.IsNotNull(puzzleGrid, "You probably forget to set puzzleGrid before you start the game.");
@@ -44,18 +40,30 @@ namespace Sudoku.Gameplay
             Assert.IsNotNull(overlay, "You probably forget to set overlay before you start the game.");
             Assert.IsNotNull(returnButton, "You probably forget to set returnButton before you start the game.");
 
-            _dataFilePath = Path.Combine(Application.persistentDataPath, _dataFilePath);
+            Globals.PROGRESS_DATA_FILE_PATH = Path.Combine(Application.persistentDataPath, Globals.PROGRESS_DATA_FILE_PATH);
 
-            if (File.Exists(_dataFilePath))
+            if (File.Exists(Globals.PROGRESS_DATA_FILE_PATH))
             {
-                var json = File.ReadAllText(_dataFilePath);
+                // Load existing progress
+                var json = File.ReadAllText(Globals.PROGRESS_DATA_FILE_PATH);
                 _puzzle = SudokuBase.Deserialize<Sudoku9x9>(json);
-            }
-            else
-            {
-                if (PlayerPrefs.HasKey(_difficultyKey))
+                if (_puzzle.solved == true) // Solved puzzle should be discarded.
                 {
-                    removeCellCount = PlayerPrefs.GetInt(_difficultyKey);
+                    File.Delete(Globals.PROGRESS_DATA_FILE_PATH);
+                    _puzzle = null;
+                }
+            }
+
+            if (_puzzle == null) // No available progress.
+            {
+                // Start game
+                if (PlayerPrefs.HasKey(Globals.DIFFICULTY_KEY))
+                {
+                    removeCellCount = PlayerPrefs.GetInt(Globals.DIFFICULTY_KEY);
+                }
+                else
+                {
+                    removeCellCount = 21;
                 }
                 _puzzle = new Sudoku9x9();
                 _puzzle.Generate(removeCellCount);
@@ -107,11 +115,9 @@ namespace Sudoku.Gameplay
                 inputKeyboard.transform.GetChild(i).GetComponent<Button>().onClick.AddListener(delegate { SetCell(value); });
             }
 
-            // Set overlay click event
             _overlayButton.onClick.AddListener(delegate { SetCell(0); });    // Retract keyboard by setting 0.
 
-            // Set return button click event
-            returnButton.onClick.AddListener(delegate { SaveProgress(); });
+            returnButton.onClick.AddListener(delegate { Close(); });
         }
 
         void Update()
@@ -124,6 +130,19 @@ namespace Sudoku.Gameplay
                     SetCell(number);
                 }
             }
+        }
+
+        void OnApplicationFocus(bool focus)
+        {
+            if (!focus)
+            {
+                SaveProgress();
+            }
+        }
+
+        void OnApplicationQuit()
+        {
+            SaveProgress();
         }
 
         void OpenKeyboard(GameObject button, int index)
@@ -163,7 +182,7 @@ namespace Sudoku.Gameplay
                 // Validate puzzle once all empty cells are filled.
                 if (_filledCount == _puzzle.removedCellIndex.Length && _puzzle.Validate())
                 {
-                    PuzzleSolvedHandler();
+                    PuzzleSolved();
                 }
             }
 
@@ -173,18 +192,12 @@ namespace Sudoku.Gameplay
             _overlayButton.interactable = false;
         }
 
-        void SaveProgress()
+        void PuzzleSolved()
         {
-            Debug.Log($"Saving game progress to {_dataFilePath}...");
-            var json = _puzzle.Serialize();
-            File.WriteAllText(_dataFilePath, json);
-        }
-
-        void PuzzleSolvedHandler()
-        {
-            if (File.Exists(_dataFilePath))
+            _puzzle.solved = true;
+            if (File.Exists(Globals.PROGRESS_DATA_FILE_PATH))
             {
-                File.Delete(_dataFilePath);
+                File.Delete(Globals.PROGRESS_DATA_FILE_PATH);
             }
 
             // Animate grid, start flipping animation from top left to bottom right
@@ -253,6 +266,23 @@ namespace Sudoku.Gameplay
                 }
                 flipInSequence.Play();
             }).Play();
+        }
+
+        void SaveProgress()
+        {
+            Debug.Log($"Saving game progress to {Globals.PROGRESS_DATA_FILE_PATH}...");
+            var json = _puzzle.Serialize();
+            File.WriteAllText(Globals.PROGRESS_DATA_FILE_PATH, json);
+        }
+
+        void Close()
+        {
+            if (!_puzzle.solved)
+            {
+                SaveProgress();
+            }
+
+            StartCoroutine(Globals.LoadSceneAsync(Globals.ENTRANCE_SCENE_NAME));
         }
     }
 }
