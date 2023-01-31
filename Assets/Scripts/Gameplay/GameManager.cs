@@ -9,7 +9,6 @@ using TMPro;
 
 using Sudoku.Gameplay.Puzzle;
 using UnityEngine.Playables;
-using static Unity.Burst.Intrinsics.X86.Avx;
 
 namespace Sudoku.Gameplay
 {
@@ -36,6 +35,7 @@ namespace Sudoku.Gameplay
         private int filledCount = 0;
 
         private static string dataFilePath = "progress.json";
+        private static string difficultyKey = "difficulty";
 
         void Awake()
         {
@@ -53,6 +53,10 @@ namespace Sudoku.Gameplay
             }
             else
             {
+                if (PlayerPrefs.HasKey(difficultyKey))
+                {
+                    removeCellCount = PlayerPrefs.GetInt(difficultyKey);
+                }
                 puzzle = new Sudoku9x9();
                 puzzle.Generate(removeCellCount);
             }
@@ -108,11 +112,6 @@ namespace Sudoku.Gameplay
 
             // Set return button click event
             returnButton.onClick.AddListener(delegate { SaveProgress(); });
-
-            // Serialization driver code
-            //var json = puzzle.Serialize();
-            //Debug.Log(json);
-            //Debug.Log(SudokuBase.Deserialize<Sudoku9x9>(json));
         }
 
         void Update()
@@ -188,24 +187,30 @@ namespace Sudoku.Gameplay
                 File.Delete(dataFilePath);
             }
 
-            // Animate grid
+            // Animate grid, start flipping animation from top left to bottom right
             var flipOutSequence = DOTween.Sequence();
             for (int i = 0; i < 9; i++)
             {
                 for (int j = 0; j < i + 1; j++)
                 {
+                    // top left triangle
                     int idx = i + j * 8;
                     var go = puzzleGrid.transform.GetChild(idx);
                     var btn = go.GetComponent<Button>();
+
+                    go.GetComponent<Image>().color= Color.white;
                     btn.transition = Selectable.Transition.None;
                     btn.interactable = false;
                     flipOutSequence.Insert(solvedFlipAnimationInterval * i, go.transform.DORotate(new Vector3(0, 90, 0), solvedFlipAnimationInterval));
 
+                    // bottom right triangle - start time reversed
                     if (i < 8)
                     {
                         idx = 80 - idx;
                         go = puzzleGrid.transform.GetChild(idx);
                         btn = go.GetComponent<Button>();
+
+                        go.GetComponent<Image>().color = Color.white;
                         btn.transition = Selectable.Transition.None;
                         btn.interactable = false;
                         flipOutSequence.Insert(solvedFlipAnimationInterval * (16 - i), go.transform.DORotate(new Vector3(0, 90, 0), solvedFlipAnimationInterval));
@@ -217,26 +222,31 @@ namespace Sudoku.Gameplay
 
             flipOutSequence.OnComplete(() =>
             {
+                // remove all text
                 for (int i = 0; i < puzzleGrid.transform.childCount; i++)
                 {
                     var go = puzzleGrid.transform.GetChild(i);
                     go.GetComponent<Image>().sprite = solvedSprite[i];
                     go.GetComponentInChildren<TextMeshProUGUI>().text = "";
                 }
+
                 var flipInSequence = DOTween.Sequence();
                 for (int i = 0; i < 9; i++)
                 {
                     for (int j = 0; j < i + 1; j++)
                     {
+                        // top left triangle
                         int idx = i + j * 8;
                         var go = puzzleGrid.transform.GetChild(idx);
 
                         flipInSequence.Insert(solvedFlipAnimationInterval * i, go.transform.DORotate(new Vector3(0, 0, 0), solvedFlipAnimationInterval));
 
+                        // bottom right triangle - start time reversed
                         if (i < 8)
                         {
                             idx = 80 - idx;
                             go = puzzleGrid.transform.GetChild(idx);
+
                             flipInSequence.Insert(solvedFlipAnimationInterval * (16 - i), go.transform.DORotate(new Vector3(0, 0, 0), solvedFlipAnimationInterval));
                         }
                     }
