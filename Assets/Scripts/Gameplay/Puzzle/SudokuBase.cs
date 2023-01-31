@@ -13,12 +13,12 @@ namespace Sudoku.Gameplay.Puzzle
         [DataMember] public int sideLength = 0;
         [DataMember] public int[] removedCellIndex;
 
-        [DataMember] protected int[] solution;
-        [DataMember] private int[] grid;
+        [DataMember] protected int[] _solution;
+        [DataMember] private int[] _grid;
 
         protected int[] Grid
         {
-            get => grid;
+            get => _grid;
             set
             {
                 double length = Math.Sqrt(value.Length);
@@ -27,7 +27,7 @@ namespace Sudoku.Gameplay.Puzzle
                     throw new ArithmeticException("SudokuBase only takes a square grid.");
                 }
                 this.sideLength = (int)length;
-                grid = value;
+                _grid = value;
             }
         }
 

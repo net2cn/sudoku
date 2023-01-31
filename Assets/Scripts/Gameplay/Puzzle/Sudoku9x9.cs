@@ -11,6 +11,7 @@ namespace Sudoku.Gameplay.Puzzle
     public sealed class Sudoku9x9 : SudokuBase
     {
         private const int REMOVAL_ATTEMPS = 10;
+        
         public Sudoku9x9()
         {
             Grid = new int[81];
@@ -34,7 +35,7 @@ namespace Sudoku.Gameplay.Puzzle
             base.Generate(emptyCount);
             FillDiagnonalBox();
             DFS(0, 3);
-            solution = (int[])Grid.Clone();
+            _solution = (int[])Grid.Clone();
             RemoveElements(emptyCount);
         }
 
@@ -217,7 +218,7 @@ namespace Sudoku.Gameplay.Puzzle
 
                     for (int i = 0; i < Length; i++)
                     {
-                        Grid[i] = solution[i];
+                        Grid[i] = _solution[i];
                     }
                     RemoveElements(count, attemp + 1);
                     return;

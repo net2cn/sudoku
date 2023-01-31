@@ -26,16 +26,16 @@ namespace Sudoku.Gameplay
 
         public Sprite[] solvedSprite;
 
-        private Sudoku9x9 puzzle;
+        private Sudoku9x9 _puzzle;
 
-        private Image overlayImage;
-        private Button overlayButton;
+        private Image _overlayImage;
+        private Button _overlayButton;
 
-        private int currentCellIndex = -1;
-        private int filledCount = 0;
+        private int _currentCellIndex = -1;
+        private int _filledCount = 0;
 
-        private static string dataFilePath = "progress.json";
-        private static string difficultyKey = "difficulty";
+        private static string _dataFilePath = "progress.json";
+        private static string _difficultyKey = "difficulty";
 
         void Awake()
         {
@@ -44,52 +44,52 @@ namespace Sudoku.Gameplay
             Assert.IsNotNull(overlay, "You probably forget to set overlay before you start the game.");
             Assert.IsNotNull(returnButton, "You probably forget to set returnButton before you start the game.");
 
-            dataFilePath = Path.Combine(Application.persistentDataPath, dataFilePath);
+            _dataFilePath = Path.Combine(Application.persistentDataPath, _dataFilePath);
 
-            if (File.Exists(dataFilePath))
+            if (File.Exists(_dataFilePath))
             {
-                var json = File.ReadAllText(dataFilePath);
-                puzzle = SudokuBase.Deserialize<Sudoku9x9>(json);
+                var json = File.ReadAllText(_dataFilePath);
+                _puzzle = SudokuBase.Deserialize<Sudoku9x9>(json);
             }
             else
             {
-                if (PlayerPrefs.HasKey(difficultyKey))
+                if (PlayerPrefs.HasKey(_difficultyKey))
                 {
-                    removeCellCount = PlayerPrefs.GetInt(difficultyKey);
+                    removeCellCount = PlayerPrefs.GetInt(_difficultyKey);
                 }
-                puzzle = new Sudoku9x9();
-                puzzle.Generate(removeCellCount);
+                _puzzle = new Sudoku9x9();
+                _puzzle.Generate(removeCellCount);
             }
 
-            overlayImage = overlay.GetComponent<Image>();
-            overlayButton = overlay.GetComponent<Button>();
+            _overlayImage = overlay.GetComponent<Image>();
+            _overlayButton = overlay.GetComponent<Button>();
         }
 
         // Start is called before the first frame update
         void Start()
         {
-            Assert.AreEqual(puzzleGrid.transform.childCount, puzzle.Length, $"puzzleGrid should have exactly {puzzle.Length} child.");
-            Assert.AreEqual(inputKeyboard.transform.childCount, puzzle.sideLength, $"inputKeyboard should have exactly {puzzle.sideLength} child.");
+            Assert.AreEqual(puzzleGrid.transform.childCount, _puzzle.Length, $"puzzleGrid should have exactly {_puzzle.Length} child.");
+            Assert.AreEqual(inputKeyboard.transform.childCount, _puzzle.sideLength, $"inputKeyboard should have exactly {_puzzle.sideLength} child.");
             Assert.AreEqual(puzzleGrid.transform.childCount, solvedSprite.Length, "solvedSprite should have exact same elements count as puzzleGrid child count.");
 
             // Set display grid and click events.
-            for (int i = 0; i < puzzle.Length; i++)
+            for (int i = 0; i < _puzzle.Length; i++)
             {
                 var go = puzzleGrid.transform.GetChild(i);
                 var btn = go.GetComponent<Button>();
                 var tmp = go.GetComponentInChildren<TextMeshProUGUI>();
 
-                tmp.text = puzzle[i].ToString();
+                tmp.text = _puzzle[i].ToString();
                 btn.transition = Selectable.Transition.None;
             }
 
-            foreach (var i in puzzle.removedCellIndex)
+            foreach (var i in _puzzle.removedCellIndex)
             {
                 var go = puzzleGrid.transform.GetChild(i);
                 var btn = go.GetComponent<Button>();
                 var tmp = go.GetComponentInChildren<TextMeshProUGUI>();
 
-                if (puzzle[i] == 0)
+                if (_puzzle[i] == 0)
                 {
                     tmp.text = "";
                 }
@@ -101,14 +101,14 @@ namespace Sudoku.Gameplay
             }
 
             // Set keyboard click events
-            for (int i = 0; i < puzzle.sideLength; i++)
+            for (int i = 0; i < _puzzle.sideLength; i++)
             {
                 int value = i + 1;
                 inputKeyboard.transform.GetChild(i).GetComponent<Button>().onClick.AddListener(delegate { SetCell(value); });
             }
 
             // Set overlay click event
-            overlayButton.onClick.AddListener(delegate { SetCell(0); });    // Retract keyboard by setting 0.
+            _overlayButton.onClick.AddListener(delegate { SetCell(0); });    // Retract keyboard by setting 0.
 
             // Set return button click event
             returnButton.onClick.AddListener(delegate { SaveProgress(); });
@@ -117,7 +117,7 @@ namespace Sudoku.Gameplay
         void Update()
         {
             // Read input from keyboard.
-            if (currentCellIndex != -1 && Input.inputString != "")
+            if (_currentCellIndex != -1 && Input.inputString != "")
             {
                 if (Int32.TryParse(Input.inputString, out int number) && number >= 0 && number < 10)
                 {
@@ -128,7 +128,7 @@ namespace Sudoku.Gameplay
 
         void OpenKeyboard(GameObject button, int index)
         {
-            int x = puzzle.sideLength;
+            int x = _puzzle.sideLength;
             int i = index / x;
             int j = index % x;
 
@@ -138,53 +138,53 @@ namespace Sudoku.Gameplay
 
             inputKeyboard.transform.position = puzzleGrid.transform.GetChild(i * x + j).position;
 
-            overlayButton.interactable = true;
-            overlayImage.raycastTarget = true;
+            _overlayButton.interactable = true;
+            _overlayImage.raycastTarget = true;
             inputKeyboard.SetActive(true);
-            currentCellIndex = index;
+            _currentCellIndex = index;
         }
 
         void SetCell(int value)
         {
-            if (currentCellIndex == -1)
+            if (_currentCellIndex == -1)
             {
                 throw new System.InvalidOperationException("You should set currentCellIndex before calling SetCell()");
             }
 
             if (value != 0)
             {
-                if (puzzle[currentCellIndex] == 0)
+                if (_puzzle[_currentCellIndex] == 0)
                 {
-                    filledCount++;
+                    _filledCount++;
                 }
-                puzzle[currentCellIndex] = value;
-                puzzleGrid.transform.GetChild(currentCellIndex).GetChild(0).GetComponent<TextMeshProUGUI>().text = value.ToString();
+                _puzzle[_currentCellIndex] = value;
+                puzzleGrid.transform.GetChild(_currentCellIndex).GetChild(0).GetComponent<TextMeshProUGUI>().text = value.ToString();
 
                 // Validate puzzle once all empty cells are filled.
-                if (filledCount == puzzle.removedCellIndex.Length && puzzle.Validate())
+                if (_filledCount == _puzzle.removedCellIndex.Length && _puzzle.Validate())
                 {
                     PuzzleSolvedHandler();
                 }
             }
 
-            currentCellIndex = -1;
+            _currentCellIndex = -1;
             inputKeyboard.SetActive(false);
-            overlayImage.raycastTarget = false;
-            overlayButton.interactable = false;
+            _overlayImage.raycastTarget = false;
+            _overlayButton.interactable = false;
         }
 
         void SaveProgress()
         {
-            Debug.Log($"Saving game progress to {dataFilePath}...");
-            var json = puzzle.Serialize();
-            File.WriteAllText(dataFilePath, json);
+            Debug.Log($"Saving game progress to {_dataFilePath}...");
+            var json = _puzzle.Serialize();
+            File.WriteAllText(_dataFilePath, json);
         }
 
         void PuzzleSolvedHandler()
         {
-            if (File.Exists(dataFilePath))
+            if (File.Exists(_dataFilePath))
             {
-                File.Delete(dataFilePath);
+                File.Delete(_dataFilePath);
             }
 
             // Animate grid, start flipping animation from top left to bottom right

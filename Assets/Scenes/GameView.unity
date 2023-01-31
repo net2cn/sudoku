@@ -7793,7 +7793,7 @@ MonoBehaviour:
   overlay: {fileID: 1691241076}
   returnButton: {fileID: 981167295}
   removeCellCount: 1
-  solvedFlipAnimationInterval: 0.08
+  solvedFlipAnimationInterval: 0.05
   solvedSprite:
   - {fileID: -1721649765, guid: 40022c3504326314c99de3e2256e0a0c, type: 3}
   - {fileID: -160901337, guid: 40022c3504326314c99de3e2256e0a0c, type: 3}
@@ -20248,7 +20248,7 @@ GameObject:
   - component: {fileID: 1831089924}
   - component: {fileID: 1831089923}
   m_Layer: 0
-  m_Name: EventSystem
+  m_Name: '!EventSystem'
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
