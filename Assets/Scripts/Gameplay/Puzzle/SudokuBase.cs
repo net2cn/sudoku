@@ -20,6 +20,7 @@ namespace Sudoku.Gameplay.Puzzle
 
         [DataMember] protected int[] solution;
         [DataMember] private int[] grid;
+
         protected int[] Grid
         {
             get => grid;
