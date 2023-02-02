@@ -39,6 +39,7 @@ namespace Sudoku.Gameplay.Puzzle
 
         public override bool Validate()
         {
+            // 405 as the complete sum of a solved sudoku grid
             if (Grid.Sum() != 405)
             {
                 return false;
@@ -51,7 +52,7 @@ namespace Sudoku.Gameplay.Puzzle
                 this[idx] = 0;
                 if (!CheckIsNumberAvailable(idx / sideLength, idx % sideLength, temp))
                 {
-                    Debug.Log("Not unique!");
+                    Debug.Log($"Not unique at ({idx / sideLength}, {idx % sideLength})!");
                     return false;
                 }
                 this[idx] = temp;
@@ -117,9 +118,10 @@ namespace Sudoku.Gameplay.Puzzle
                     {
                         return true;
                     }
-                    this[i, j] = 0;
                 }
             }
+
+            this[i, j] = 0;
             return false;
         }
 
