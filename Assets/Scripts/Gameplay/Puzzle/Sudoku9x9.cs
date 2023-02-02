@@ -19,14 +19,12 @@ namespace Sudoku.Gameplay.Puzzle
 
         public Sudoku9x9(int[] initialGrid)
         {
-            if (initialGrid.Length == 81)
-            {
-                Grid = initialGrid;
-            }
-            else
+            if (initialGrid.Length != 81)
             {
                 throw new ArgumentException("A 9x9 matrix is required.");
             }
+
+            Grid = initialGrid;
         }
 
         // Start is called before the first frame update
@@ -41,30 +39,25 @@ namespace Sudoku.Gameplay.Puzzle
 
         public override bool Validate()
         {
-            int sum = 0;
-            for (int i = 0; i < Grid.Length; i++)
+            if (Grid.Sum() != 405)
             {
-                sum += this[i];
+                return false;
             }
 
-            if (sum == 405) // 405 as the sum of a complete sudoku
+            // Check each removed cell.
+            foreach (var idx in removedCellIndex)
             {
-                // Check each removed cell.
-                foreach (var idx in removedCellIndex)
+                int temp = this[idx];
+                this[idx] = 0;
+                if (!CheckIsNumberAvailable(idx / sideLength, idx % sideLength, temp))
                 {
-                    int temp = this[idx];
-                    this[idx] = 0;
-                    if (!CheckIsNumberAvailable(idx / sideLength, idx % sideLength, temp))
-                    {
-                        Debug.Log("Not unique!");
-                        return false;
-                    }
-                    this[idx] = temp;
+                    Debug.Log("Not unique!");
+                    return false;
                 }
-                return true;
+                this[idx] = temp;
             }
 
-            return false;
+            return true;
         }
 
         public override string Serialize()
@@ -100,15 +93,13 @@ namespace Sudoku.Gameplay.Puzzle
             // Zig-zag traverse through the whole grid.
             if (j >= 9)
             {
-                if (i < 8)
-                {
-                    i += 1;
-                    j = 0;
-                }
-                else
+                if (i >= 8)
                 {
                     return true;
                 }
+
+                i += 1;
+                j = 0;
             }
 
             // Skip non-zero tiles.
@@ -155,30 +146,30 @@ namespace Sudoku.Gameplay.Puzzle
             return true;
         }
 
-        private bool TryRemovePair(int i, int j, bool force = false)
+        private bool TryRemovePair(int a, int b, bool force = false)
         {
             int availableCount = 0;
-            int tempI = this[i];
-            this[i] = 0;
-            int tempJ = this[j];
-            this[j] = 0;
-            if (!force)
+            int tempI = this[a];
+            this[a] = 0;
+            int tempJ = this[b];
+            this[b] = 0;
+            if (!force) // When force is set to true, the given pair will be removed anyway without check solution uniqueness after removal.
             {
                 for (int num = 0; num < 9; num++)
                 {
-                    if (CheckIsNumberAvailable(i / 9, i % 9, num))
+                    if (CheckIsNumberAvailable(a / 9, a % 9, num))
                     {
                         availableCount++;
                     }
-                    if (CheckIsNumberAvailable(j / 9, j % 9, num))
+                    if (CheckIsNumberAvailable(b / 9, b % 9, num))
                     {
                         availableCount++;
                     }
                 }
                 if (availableCount > 2)
                 {
-                    this[i] = tempI;
-                    this[j] = tempJ;
+                    this[a] = tempI;
+                    this[b] = tempJ;
                     return false;
                 }
             }
