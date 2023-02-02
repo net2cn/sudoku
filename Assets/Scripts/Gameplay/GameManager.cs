@@ -42,21 +42,9 @@ namespace Sudoku.Gameplay
 
             Globals.PROGRESS_DATA_FILE_PATH = Path.Combine(Application.persistentDataPath, Globals.PROGRESS_DATA_FILE_PATH);
 
-            if (File.Exists(Globals.PROGRESS_DATA_FILE_PATH))
+            if (!TryLoadProgress()) // No available progress.
             {
-                // Load existing progress
-                var json = File.ReadAllText(Globals.PROGRESS_DATA_FILE_PATH);
-                _puzzle = SudokuBase.Deserialize<Sudoku9x9>(json);
-                if (_puzzle.solved == true) // Solved puzzle should be discarded.
-                {
-                    File.Delete(Globals.PROGRESS_DATA_FILE_PATH);
-                    _puzzle = null;
-                }
-            }
-
-            if (_puzzle == null) // No available progress.
-            {
-                // Start game
+                // Start game with new puzzle
                 if (PlayerPrefs.HasKey(Globals.DIFFICULTY_KEY))
                 {
                     removeCellCount = PlayerPrefs.GetInt(Globals.DIFFICULTY_KEY);
@@ -119,6 +107,8 @@ namespace Sudoku.Gameplay
             _overlayButton.onClick.AddListener(delegate { SetCell(0); });    // Retract keyboard by setting 0.
 
             returnButton.onClick.AddListener(delegate { Close(); });
+
+            ValidatePuzzle();
         }
 
         void Update()
@@ -180,17 +170,22 @@ namespace Sudoku.Gameplay
                 _puzzle[_currentCellIndex] = value;
                 puzzleGrid.transform.GetChild(_currentCellIndex).GetChild(0).GetComponent<TextMeshProUGUI>().text = value.ToString();
 
-                // Validate puzzle once all empty cells are filled.
-                if (_filledCount == _puzzle.removedCellIndex.Length && _puzzle.Validate())
-                {
-                    PuzzleSolved();
-                }
+                ValidatePuzzle();
             }
 
             _currentCellIndex = -1;
             inputKeyboard.SetActive(false);
             _overlayImage.raycastTarget = false;
             _overlayButton.interactable = false;
+        }
+
+        void ValidatePuzzle()
+        {
+            // Validate puzzle once all empty cells are filled.
+            if (_filledCount == _puzzle.removedCellIndex.Length && _puzzle.Validate())
+            {
+                PuzzleSolved();
+            }
         }
 
         void PuzzleSolved()
@@ -274,8 +269,33 @@ namespace Sudoku.Gameplay
             else
             {
                 File.Delete(Globals.PROGRESS_DATA_FILE_PATH);
-                _puzzle = null;
             }
+        }
+
+        bool TryLoadProgress()
+        {
+            if (!File.Exists(Globals.PROGRESS_DATA_FILE_PATH))
+            {
+                return false;
+            }
+
+            // Load existing progress
+            var json = File.ReadAllText(Globals.PROGRESS_DATA_FILE_PATH);
+            _puzzle = SudokuBase.Deserialize<Sudoku9x9>(json);
+            if (_puzzle.solved == true) // Solved puzzle should be discarded.
+            {
+                File.Delete(Globals.PROGRESS_DATA_FILE_PATH);
+                return false;
+            }
+
+            foreach (var removedIdx in _puzzle.removedCellIndex)
+            {
+                if (_puzzle[removedIdx] != 0)
+                {
+                    _filledCount++;
+                }
+            }
+            return true;
         }
 
         void Close()
