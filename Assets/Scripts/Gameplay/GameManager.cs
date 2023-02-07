@@ -78,6 +78,7 @@ namespace Sudoku.Gameplay
 
                 tmp.text = _puzzle[i].ToString();
                 btn.transition = Selectable.Transition.None;
+                btn.interactable = false;
             }
 
             foreach (var i in _puzzle.removedCellIndex)
@@ -92,6 +93,7 @@ namespace Sudoku.Gameplay
                 }
                 tmp.color = Color.blue;
                 btn.transition = Selectable.Transition.ColorTint;
+                btn.interactable = true;
 
                 int index = i;
                 btn.onClick.AddListener(delegate { OpenKeyboard(tmp.gameObject, index); });

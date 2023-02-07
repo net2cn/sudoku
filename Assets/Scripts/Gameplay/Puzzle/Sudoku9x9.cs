@@ -11,7 +11,7 @@ namespace Sudoku.Gameplay.Puzzle
     public sealed class Sudoku9x9 : SudokuBase
     {
         private const int REMOVAL_ATTEMPS = 10;
-        
+
         public Sudoku9x9()
         {
             Grid = new int[81];
@@ -218,7 +218,7 @@ namespace Sudoku.Gameplay.Puzzle
                 }
             }
 
-            if (attemp==REMOVAL_ATTEMPS - 1)
+            if (attemp == REMOVAL_ATTEMPS - 1)
             {
                 Debug.LogError($"Unable to generate a sudoku with unique solution at maximum {REMOVAL_ATTEMPS} attempts. A sudoku with probably more than 1 solution is generated.");
             }
@@ -227,7 +227,7 @@ namespace Sudoku.Gameplay.Puzzle
             if (count % 2 == 1)
             {
                 this[4, 4] = 0;
-                removedCellIndex[^1] = 40;
+                removedCellIndex[removedCellIndex.Length - 1] = 40;
             }
         }
     }
