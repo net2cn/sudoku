@@ -103,10 +103,10 @@ namespace Sudoku.Gameplay
             for (int i = 0; i < _puzzle.sideLength; i++)
             {
                 int value = i + 1;
-                inputKeyboard.transform.GetChild(i).GetComponent<Button>().onClick.AddListener(delegate { SetCell(value); });
+                inputKeyboard.transform.GetChild(i).GetComponent<Button>().onClick.AddListener(delegate { SetCellAndCloseKeyboard(value); });
             }
 
-            _overlayButton.onClick.AddListener(delegate { SetCell(0); });    // Retract keyboard by setting 0.
+            _overlayButton.onClick.AddListener(delegate { SetCellAndCloseKeyboard(0); });    // Retract keyboard by setting 0.
 
             returnButton.onClick.AddListener(delegate { Close(); });
 
@@ -120,7 +120,7 @@ namespace Sudoku.Gameplay
             {
                 if (Int32.TryParse(Input.inputString, out int number) && number >= 0 && number < 10)
                 {
-                    SetCell(number);
+                    SetCellAndCloseKeyboard(number);
                 }
             }
         }
@@ -155,14 +155,23 @@ namespace Sudoku.Gameplay
             inputKeyboard.SetActive(true);
             _currentCellIndex = index;
         }
+        
+        void CloseKeyboard()
+        {
+            _currentCellIndex = -1;
+            inputKeyboard.SetActive(false);
+            _overlayImage.raycastTarget = false;
+            _overlayButton.interactable = false;
+        }
 
-        void SetCell(int value)
+        void SetCellAndCloseKeyboard(int value)
         {
             if (_currentCellIndex == -1)
             {
                 throw new System.InvalidOperationException("You should set currentCellIndex before calling SetCell()");
             }
 
+            // set puzzle value
             if (value != 0)
             {
                 if (_puzzle[_currentCellIndex] == 0)
@@ -171,14 +180,10 @@ namespace Sudoku.Gameplay
                 }
                 _puzzle[_currentCellIndex] = value;
                 puzzleGrid.transform.GetChild(_currentCellIndex).GetChild(0).GetComponent<TextMeshProUGUI>().text = value.ToString();
-
-                ValidatePuzzle();
             }
 
-            _currentCellIndex = -1;
-            inputKeyboard.SetActive(false);
-            _overlayImage.raycastTarget = false;
-            _overlayButton.interactable = false;
+            ValidatePuzzle();
+            CloseKeyboard();
         }
 
         void ValidatePuzzle()
