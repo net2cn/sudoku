@@ -31,7 +31,6 @@ namespace Sudoku.Gameplay
         private Button _overlayButton;
 
         private int _currentCellIndex = -1;
-        private int _filledCount = 0;
 
         void Awake()
         {
@@ -174,10 +173,6 @@ namespace Sudoku.Gameplay
             // set puzzle value
             if (value != 0)
             {
-                if (_puzzle[_currentCellIndex] == 0)
-                {
-                    _filledCount++;
-                }
                 _puzzle[_currentCellIndex] = value;
                 puzzleGrid.transform.GetChild(_currentCellIndex).GetChild(0).GetComponent<TextMeshProUGUI>().text = value.ToString();
             }
@@ -188,8 +183,17 @@ namespace Sudoku.Gameplay
 
         void ValidatePuzzle()
         {
+            var filledCount = 0;
+            foreach(var idx in _puzzle.removedCellIndex)
+            {
+                if (_puzzle[idx] != 0)
+                {
+                    filledCount++;
+                }
+            }
+
             // Validate puzzle once all empty cells are filled.
-            if (_filledCount == _puzzle.removedCellIndex.Length && _puzzle.Validate())
+            if (filledCount == _puzzle.removedCellIndex.Length && _puzzle.Validate())
             {
                 PuzzleSolved();
             }
@@ -297,13 +301,6 @@ namespace Sudoku.Gameplay
                 return false;
             }
 
-            foreach (var removedIdx in _puzzle.removedCellIndex)
-            {
-                if (_puzzle[removedIdx] != 0)
-                {
-                    _filledCount++;
-                }
-            }
             return true;
         }
 
