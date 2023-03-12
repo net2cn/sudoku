@@ -1,22 +1,26 @@
+using Puerts;
 using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.Text;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace Sudoku.Gameplay.Puzzle
 {
     // https://www.sudokuoftheday.com/creation
     public sealed class Sudoku9x9 : SudokuBase
     {
+        [IgnoreDataMember] JsEnv env = new JsEnv(new DefaultLoader());
+        [IgnoreDataMember] public Func<int, int, bool> jsDfs;
+        [IgnoreDataMember] public Action jsLog;
+
         private const int REMOVAL_ATTEMPS = 10;
 
-        public Sudoku9x9()
-        {
-            Grid = new int[81];
-        }
-
+        public Sudoku9x9() : this(new int[81]) { }
+       
         public Sudoku9x9(int[] initialGrid)
         {
             if (initialGrid.Length != 81)
@@ -25,6 +29,23 @@ namespace Sudoku.Gameplay.Puzzle
             }
 
             Grid = initialGrid;
+
+            env.UsingFunc<int, int, bool>();
+
+            var ts = env.ExecuteModule<Action<Sudoku9x9>>("TypeScript/sudoku9x9.mjs", "init");
+            if (ts != null)
+            {
+                ts(this);
+            }
+            else
+            {
+                throw new InvalidDataException("Unable to find correct module to execute.");
+            }
+
+            if (jsDfs == null)
+            {
+                throw new InvalidProgramException("Unable set TypeScript binding.");
+            }
         }
 
         // Start is called before the first frame update
@@ -32,7 +53,12 @@ namespace Sudoku.Gameplay.Puzzle
         {
             base.Generate(emptyCount);
             FillDiagnonalBox();
-            DFS(0, 3);
+
+            //DFS(0, 3);
+            jsLog();
+            var ret = jsDfs(0, 3);
+            Debug.Log(ret);
+
             _solution = (int[])Grid.Clone();
             RemoveElements(emptyCount);
         }

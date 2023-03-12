@@ -23,6 +23,8 @@ namespace Sudoku.Gameplay
 
         public float solvedFlipAnimationInterval = 0.08f;
 
+        public bool saveProgress = true;
+
         public Sprite[] solvedSprite;
 
         private Sudoku9x9 _puzzle;
@@ -154,7 +156,7 @@ namespace Sudoku.Gameplay
             inputKeyboard.SetActive(true);
             _currentCellIndex = index;
         }
-        
+
         void CloseKeyboard()
         {
             _currentCellIndex = -1;
@@ -184,7 +186,7 @@ namespace Sudoku.Gameplay
         void ValidatePuzzle()
         {
             var filledCount = 0;
-            foreach(var idx in _puzzle.removedCellIndex)
+            foreach (var idx in _puzzle.removedCellIndex)
             {
                 if (_puzzle[idx] != 0)
                 {
@@ -273,6 +275,11 @@ namespace Sudoku.Gameplay
 
         void SaveProgress()
         {
+            if (!saveProgress)
+            {
+                return;
+            }
+
             if (!_puzzle.solved)
             {
                 Debug.Log($"Saving game progress to {Globals.PROGRESS_DATA_FILE_PATH}...");

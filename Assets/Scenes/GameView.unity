@@ -6390,6 +6390,7 @@ MonoBehaviour:
   returnButton: {fileID: 981167295}
   removeCellCount: 1
   solvedFlipAnimationInterval: 0.05
+  saveProgress: 1
   solvedSprite:
   - {fileID: 21300000, guid: 40022c3504326314c99de3e2256e0a0c, type: 3}
   - {fileID: 21300002, guid: 40022c3504326314c99de3e2256e0a0c, type: 3}
