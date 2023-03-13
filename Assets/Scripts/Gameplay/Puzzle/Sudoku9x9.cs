@@ -14,8 +14,8 @@ namespace Sudoku.Gameplay.Puzzle
     public sealed class Sudoku9x9 : SudokuBase
     {
         [IgnoreDataMember] JsEnv env = new JsEnv(new DefaultLoader());
-        [IgnoreDataMember] public Func<int, int, bool> jsDfs;
-        [IgnoreDataMember] public Action jsLog;
+        [IgnoreDataMember] public Action<int> jsGenerate;
+        [IgnoreDataMember] public Func<bool> jsValidate;
 
         private const int REMOVAL_ATTEMPS = 10;
 
@@ -30,7 +30,9 @@ namespace Sudoku.Gameplay.Puzzle
 
             Grid = initialGrid;
 
-            env.UsingFunc<int, int, bool>();
+            // Delegate bridge must be set before module execution.
+            env.UsingAction<int>();
+            env.UsingFunc<bool>();
 
             var ts = env.ExecuteModule<Action<Sudoku9x9>>("TypeScript/sudoku9x9.mjs", "init");
             if (ts != null)
@@ -41,50 +43,44 @@ namespace Sudoku.Gameplay.Puzzle
             {
                 throw new InvalidDataException("Unable to find correct module to execute.");
             }
-
-            if (jsDfs == null)
-            {
-                throw new InvalidProgramException("Unable set TypeScript binding.");
-            }
         }
 
         // Start is called before the first frame update
         public override void Generate(int emptyCount = 0)
         {
             base.Generate(emptyCount);
-            FillDiagnonalBox();
+            jsGenerate(emptyCount);
+            //FillDiagnonalBox();
 
             //DFS(0, 3);
-            jsLog();
-            var ret = jsDfs(0, 3);
-            Debug.Log(ret);
 
-            _solution = (int[])Grid.Clone();
-            RemoveElements(emptyCount);
+            //_solution = (int[])Grid.Clone();
+            //RemoveElements(emptyCount);
         }
 
         public override bool Validate()
         {
-            // 405 as the complete sum of a solved sudoku grid
-            if (Grid.Sum() != 405)
-            {
-                return false;
-            }
+            return jsValidate();
+            //// 405 as the complete sum of a solved sudoku grid
+            //if (Grid.Sum() != 405)
+            //{
+            //    return false;
+            //}
 
-            // Check each removed cell.
-            foreach (var idx in removedCellIndex)
-            {
-                int temp = this[idx];
-                this[idx] = 0;
-                if (!CheckIsNumberAvailable(idx / sideLength, idx % sideLength, temp))
-                {
-                    Debug.Log($"Not unique at ({idx / sideLength}, {idx % sideLength})!");
-                    return false;
-                }
-                this[idx] = temp;
-            }
+            //// Check each removed cell.
+            //foreach (var idx in removedCellIndex)
+            //{
+            //    int temp = this[idx];
+            //    this[idx] = 0;
+            //    if (!CheckIsNumberAvailable(idx / sideLength, idx % sideLength, temp))
+            //    {
+            //        Debug.Log($"Not unique at ({idx / sideLength}, {idx % sideLength})!");
+            //        return false;
+            //    }
+            //    this[idx] = temp;
+            //}
 
-            return true;
+            //return true;
         }
 
         public override string Serialize()
