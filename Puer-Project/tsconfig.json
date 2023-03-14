@@ -1,6 +1,8 @@
 {
   "compilerOptions": {
-    "rootDirs": ["src"],
+    "rootDirs": [
+      "src"
+    ],
     "target": "esnext",
     "module": "ES2015",
     "jsx": "react",
@@ -12,5 +14,17 @@
       "./node_modules/@types"
     ],
     "outDir": "output"
+  },
+  "watchOptions": {
+    "watchFile": "useFsEvents",
+    "watchDirectory": "useFsEvents",
+    "fallbackPolling": "dynamicPriority",
+    "synchronousWatchDirectory": true,
+    "excludeDirectories": [
+      "./node_modules",
+      "output"
+    ],
+    "excludeFiles": [
+    ]
   }
 }

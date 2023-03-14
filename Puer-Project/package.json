@@ -4,14 +4,15 @@
   "description": "ts project",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "postbuild": "node copyJsFile.js output ../Assets/Resources/TypeScript"
+    "postbuild": "node copyJsFile.js output/ ../Assets/Resources/TypeScript",
+    "develop": "nodemon --watch ./src --ext * --exec \"tsc -p tsconfig.json && node copyJsFile.js output/ ../Assets/Resources/TypeScript\""
   },
   "dependencies": {
     "axios": "^0.27.2",
+    "nodemon": "^2.0.21",
     "typescript": "^4.6.3"
   },
   "main": "copyJsFile.js",
-  "devDependencies": {},
   "keywords": [],
   "author": "",
   "license": "ISC"

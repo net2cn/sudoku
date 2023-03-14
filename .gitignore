@@ -74,4 +74,6 @@ crashlytics-build.properties
 
 # Puerts
 /[Aa]ssets/[Gg]en/
+/[Aa]ssets/[Gg]en.meta
+
 /[Aa]ssets/[Rr]esources/[Tt]ype[Ss]cript*
