@@ -63,12 +63,16 @@ namespace Sudoku.Gameplay.Puzzle
 
         public override string Serialize()
         {
-            var serializer = new DataContractJsonSerializer(typeof(Sudoku9x9));
-            using (MemoryStream ms = new MemoryStream())
-            {
-                serializer.WriteObject(ms, this);
-                return Encoding.Default.GetString(ms.ToArray());
-            }
+            var json = JsonUtility.ToJson(this);
+            Debug.Log(json);
+            return json;
+            //var serializer = new DataContractJsonSerializer(typeof(Sudoku9x9));
+            //using (MemoryStream ms = new MemoryStream())
+            //{
+            //    serializer.WriteObject(ms, this);
+            //    Debug.Log(string.Join("", ms.ToArray().Select(x => Convert.ToChar(x))));
+            //    return Encoding.Default.GetString(ms.ToArray());
+            //}
         }
 
         private void FillDiagnonalBox()

@@ -1,21 +1,19 @@
 using System;
 using System.IO;
-using System.Runtime.Serialization;
-using System.Runtime.Serialization.Json;
 using System.Text;
 using UnityEngine;
 
 namespace Sudoku.Gameplay.Puzzle
 {
-    [DataContract]
+    [Serializable]
     public abstract class SudokuBase
     {
-        [DataMember] public int sideLength = 0;
-        [DataMember] public int[] removedCellIndex;
-        [DataMember] public bool solved = false;
+        [SerializeField] public int sideLength = 0;
+        [SerializeField] public int[] removedCellIndex;
+        [SerializeField] public bool solved = false;
 
-        [DataMember] protected int[] _solution;
-        [DataMember] private int[] _grid;
+        [SerializeField] protected int[] _solution;
+        [SerializeField] private int[] _grid;
 
         protected int[] Grid
         {
@@ -76,11 +74,12 @@ namespace Sudoku.Gameplay.Puzzle
 
         public static T Deserialize<T>(string json) where T : SudokuBase
         {
-            var deserializer = new DataContractJsonSerializer(typeof(T));
-            using (var ms = new MemoryStream(Encoding.Unicode.GetBytes(json)))
-            {
-                return (T)deserializer.ReadObject(ms);
-            }
+            return JsonUtility.FromJson<T>(json);
+            //var deserializer = new DataContractJsonSerializer(typeof(T));
+            //using (var ms = new MemoryStream(Encoding.Unicode.GetBytes(json)))
+            //{
+            //    return (T)deserializer.ReadObject(ms);
+            //}
         }
 
         public override string ToString()
